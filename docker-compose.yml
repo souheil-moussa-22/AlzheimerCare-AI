@@ -1,0 +1,54 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  backend:
+    build: ./backend
+    env_file: .env.example
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:${BACKEND_PORT:-8000}"
+    volumes:
+      - ./backend:/app
+    ports:
+      - "${BACKEND_PORT:-8000}:${BACKEND_PORT:-8000}"
+    depends_on:
+      - postgres
+      - redis
+
+  frontend:
+    build: ./frontend
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port ${FRONTEND_PORT:-5173}"
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "${FRONTEND_PORT:-5173}:${FRONTEND_PORT:-5173}"
+    depends_on:
+      - backend
+
+  ai-service:
+    build: ./ai-service
+    env_file: .env.example
+    command: sh -c "pip install -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port ${AI_SERVICE_PORT:-8001}"
+    volumes:
+      - ./ai-service:/app
+    ports:
+      - "${AI_SERVICE_PORT:-8001}:${AI_SERVICE_PORT:-8001}"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
