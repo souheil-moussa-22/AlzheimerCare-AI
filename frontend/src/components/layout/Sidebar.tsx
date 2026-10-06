@@ -43,7 +43,7 @@ export const Sidebar = ({ role, navItems }: SidebarProps) => {
           <div>
             <p className="text-sm font-semibold text-text">AlzheimerCare AI</p>
             <p className="text-xs text-text-muted">
-              {role === 'patient' ? 'Espace patient' : 'Espace médecin'}
+              {role === 'patient' ? 'Espace patient' : role === 'doctor' ? 'Espace médecin' : 'Espace admin'}
             </p>
           </div>
         </div>

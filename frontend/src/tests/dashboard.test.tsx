@@ -1,13 +1,11 @@
 import { screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import App from '../App'
+import { mockUsers } from '../mocks/auth'
 import { renderWithProviders } from './testUtils'
 
 describe('Dashboard pages', () => {
   it('renders patient dashboard main sections', async () => {
-    renderWithProviders(<App />)
-
-    await userEvent.click(screen.getByRole('button', { name: /entrer comme patient/i }))
+    renderWithProviders(<App />, '/patient/dashboard', mockUsers.patient)
 
     expect(await screen.findByTestId('patient-chart')).toBeInTheDocument()
     expect(screen.getByTestId('patient-games')).toBeInTheDocument()
@@ -16,9 +14,7 @@ describe('Dashboard pages', () => {
   })
 
   it('renders doctor dashboard main sections', async () => {
-    renderWithProviders(<App />)
-
-    await userEvent.click(screen.getByRole('button', { name: /entrer comme médecin/i }))
+    renderWithProviders(<App />, '/doctor/dashboard', mockUsers.doctor)
 
     expect(await screen.findByTestId('doctor-stats')).toBeInTheDocument()
     expect(screen.getByTestId('doctor-patients')).toBeInTheDocument()

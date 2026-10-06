@@ -1,32 +1,152 @@
-import { createContext, type ReactNode, useContext, useMemo, useState } from 'react'
-import { mockUsers } from '../mocks/auth'
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { keycloak } from '../auth/keycloak'
 import type { AuthUser, UserRole } from '../types'
 
 interface AuthContextValue {
   user: AuthUser | null
-  loginAs: (role: UserRole) => void
-  logout: () => void
+  isAuthenticated: boolean
+  sessionExpired: boolean
+  login: () => Promise<void>
+  logout: () => Promise<void>
+  hasRole: (role: UserRole) => boolean
+  getAccessToken: () => string | null
+  refreshAccessToken: () => Promise<string | null>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
+const resolveRole = (tokenRoles: unknown): UserRole | null => {
+  if (!Array.isArray(tokenRoles)) {
+    return null
+  }
+  if (tokenRoles.includes('admin')) {
+    return 'admin'
+  }
+  if (tokenRoles.includes('doctor')) {
+    return 'doctor'
+  }
+  if (tokenRoles.includes('patient')) {
+    return 'patient'
+  }
+  return null
+}
+
+const mapUserFromToken = (): AuthUser | null => {
+  const token = keycloak.tokenParsed
+  if (!token?.sub) {
+    return null
+  }
+  const role = resolveRole((token as { realm_access?: { roles?: string[] } }).realm_access?.roles)
+  if (!role) {
+    return null
+  }
+
+  const firstName = (token.given_name as string | undefined) ?? ''
+  const lastName = (token.family_name as string | undefined) ?? ''
+  return {
+    id: token.sub,
+    keycloakId: token.sub,
+    email: (token.email as string | undefined) ?? '',
+    fullName: `${firstName} ${lastName}`.trim() || ((token.preferred_username as string | undefined) ?? 'User'),
+    role,
+  }
+}
+
 export const AuthProvider = ({
   children,
   initialUser = null,
+  disableKeycloak = false,
 }: {
   children: ReactNode
   initialUser?: AuthUser | null
+  disableKeycloak?: boolean
 }) => {
   const [user, setUser] = useState<AuthUser | null>(initialUser)
+  const [initialized, setInitialized] = useState(Boolean(initialUser) || disableKeycloak)
+  const [sessionExpired, setSessionExpired] = useState(false)
+
+  const login = useCallback(async () => {
+    if (disableKeycloak) {
+      return
+    }
+    await keycloak.login()
+  }, [disableKeycloak])
+
+  const logout = useCallback(async () => {
+    setUser(null)
+    if (disableKeycloak) {
+      return
+    }
+    await keycloak.logout({ redirectUri: window.location.origin + '/login' })
+  }, [disableKeycloak])
+
+  const refreshAccessToken = useCallback(async () => {
+    if (disableKeycloak) {
+      return null
+    }
+    try {
+      await keycloak.updateToken(30)
+      return keycloak.token ?? null
+    } catch {
+      setSessionExpired(true)
+      setUser(null)
+      await keycloak.logout({ redirectUri: window.location.origin + '/session-expired' })
+      return null
+    }
+  }, [disableKeycloak])
+
+  useEffect(() => {
+    if (disableKeycloak || initialUser) {
+      return
+    }
+
+    let mounted = true
+    void keycloak
+      .init({
+        onLoad: 'check-sso',
+        pkceMethod: 'S256',
+        checkLoginIframe: false,
+        silentCheckSsoRedirectUri: `${window.location.origin}/silent-check-sso.html`,
+      })
+      .then((authenticated) => {
+        if (!mounted) {
+          return
+        }
+        if (authenticated) {
+          setUser(mapUserFromToken())
+        }
+        keycloak.onTokenExpired = () => {
+          void refreshAccessToken()
+        }
+      })
+      .finally(() => {
+        if (mounted) {
+          setInitialized(true)
+        }
+      })
+
+    return () => {
+      mounted = false
+    }
+  }, [disableKeycloak, initialUser, refreshAccessToken])
 
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
-      loginAs: (role) => setUser(mockUsers[role]),
-      logout: () => setUser(null),
+      isAuthenticated: Boolean(user),
+      sessionExpired,
+      login,
+      logout,
+      hasRole: (role) => user?.role === role,
+      getAccessToken: () => (disableKeycloak ? null : keycloak.token ?? null),
+      refreshAccessToken,
     }),
-    [user],
+    [disableKeycloak, login, logout, refreshAccessToken, sessionExpired, user],
   )
+
+  if (!initialized) {
+    return null
+  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

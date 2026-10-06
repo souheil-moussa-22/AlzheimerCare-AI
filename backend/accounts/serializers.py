@@ -1,67 +1,42 @@
-from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
-from django.contrib.auth.tokens import default_token_generator
-from django.utils.encoding import force_str
-from django.utils.http import urlsafe_base64_decode
 from rest_framework import serializers
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+from accounts.models import UserRole
 
 User = get_user_model()
 
 
-class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-        token["role"] = user.role
-        return token
+class AuthMeSerializer(serializers.ModelSerializer):
+    profile = serializers.SerializerMethodField()
 
-    def validate(self, attrs):
-        data = super().validate(attrs)
-        data["role"] = self.user.role
-        return data
+    class Meta:
+        model = User
+        fields = ["id", "email", "role", "profile"]
+
+    def get_profile(self, obj):
+        if obj.role == UserRole.PATIENT and hasattr(obj, "patient_profile"):
+            return {
+                "patient_profile_id": obj.patient_profile.id,
+                "pseudonym": obj.patient_profile.pseudonym,
+            }
+        if obj.role == UserRole.DOCTOR and hasattr(obj, "doctor_profile"):
+            return {
+                "doctor_profile_id": obj.doctor_profile.id,
+                "license_number": obj.doctor_profile.license_number,
+                "specialty": obj.doctor_profile.specialty,
+            }
+        return {}
 
 
-class LogoutSerializer(serializers.Serializer):
-    refresh = serializers.CharField()
-
-
-class PasswordResetRequestSerializer(serializers.Serializer):
+class AdminCreateUserSerializer(serializers.Serializer):
     email = serializers.EmailField()
-
-    def save(self):
-        form = PasswordResetForm(data={"email": self.validated_data["email"]})
-        if form.is_valid():
-            form.save(
-                request=None,
-                use_https=False,
-                from_email=None,
-                email_template_name="registration/password_reset_email.html",
-                subject_template_name="registration/password_reset_subject.txt",
-                token_generator=default_token_generator,
-                domain_override="localhost:5173",
-                extra_email_context={"frontend_reset_url": settings.FRONTEND_PASSWORD_RESET_URL},
-            )
+    role = serializers.ChoiceField(choices=[UserRole.PATIENT, UserRole.DOCTOR])
+    temporary_password = serializers.CharField(required=False, write_only=True, min_length=12)
 
 
-class PasswordResetConfirmSerializer(serializers.Serializer):
-    uid = serializers.CharField()
-    token = serializers.CharField()
-    new_password = serializers.CharField(min_length=8, write_only=True)
+class AdminChangeRoleSerializer(serializers.Serializer):
+    role = serializers.ChoiceField(choices=[UserRole.PATIENT, UserRole.DOCTOR])
 
-    def save(self):
-        uid = force_str(urlsafe_base64_decode(self.validated_data["uid"]))
-        user = User.objects.get(pk=uid)
-        form = SetPasswordForm(
-            user=user,
-            data={
-                "new_password1": self.validated_data["new_password"],
-                "new_password2": self.validated_data["new_password"],
-            },
-        )
-        if not form.is_valid():
-            raise serializers.ValidationError(form.errors)
-        if not default_token_generator.check_token(user, self.validated_data["token"]):
-            raise serializers.ValidationError({"token": "Invalid token"})
-        form.save()
+
+class AdminToggleUserSerializer(serializers.Serializer):
+    enabled = serializers.BooleanField()

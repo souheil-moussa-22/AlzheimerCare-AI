@@ -1,0 +1,157 @@
+{
+  "realm": "alzheimercare",
+  "enabled": true,
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": true,
+  "verifyEmail": true,
+  "loginWithEmailAllowed": true,
+  "resetPasswordAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "rememberMe": false,
+  "loginTheme": "keycloak",
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 10,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 28800,
+  "accessCodeLifespan": 60,
+  "revokeRefreshToken": true,
+  "refreshTokenMaxReuse": 0,
+  "passwordPolicy": "length(12) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and notUsername(undefined)",
+  "defaultRole": {
+    "name": "patient"
+  },
+  "roles": {
+    "realm": [
+      { "name": "patient", "description": "Patient user" },
+      { "name": "doctor", "description": "Doctor user" },
+      { "name": "admin", "description": "Technical admin user" }
+    ]
+  },
+  "requiredActions": [
+    {
+      "alias": "CONFIGURE_TOTP",
+      "name": "Configure OTP",
+      "providerId": "CONFIGURE_TOTP",
+      "enabled": false,
+      "defaultAction": false,
+      "priority": 30,
+      "config": {}
+    },
+    {
+      "alias": "VERIFY_EMAIL",
+      "name": "Verify email",
+      "providerId": "VERIFY_EMAIL",
+      "enabled": true,
+      "defaultAction": true,
+      "priority": 40,
+      "config": {}
+    },
+    {
+      "alias": "UPDATE_PASSWORD",
+      "name": "Update Password",
+      "providerId": "UPDATE_PASSWORD",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 50,
+      "config": {}
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "alzheimercare-frontend",
+      "name": "AlzheimerCare Frontend",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "implicitFlowEnabled": false,
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "redirectUris": [
+        "http://localhost:5173/",
+        "http://localhost:5173/login"
+      ],
+      "webOrigins": [
+        "http://localhost:5173"
+      ],
+      "defaultClientScopes": ["web-origins", "roles", "profile", "email"]
+    },
+    {
+      "clientId": "alzheimercare-backend",
+      "name": "AlzheimerCare Backend Admin API Client",
+      "enabled": true,
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "secret": "__SET_VIA_ADMIN_CONSOLE_OR_ENV__",
+      "redirectUris": [],
+      "webOrigins": [],
+      "defaultClientScopes": ["roles", "profile", "email"]
+    }
+  ],
+  "users": [
+    {
+      "username": "dev-patient@alzheimercare.local",
+      "email": "dev-patient@alzheimercare.local",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "DevPatient123!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["patient"],
+      "attributes": {
+        "seed_note": ["DEV-ONLY account for local setup"]
+      }
+    },
+    {
+      "username": "dev-doctor@alzheimercare.local",
+      "email": "dev-doctor@alzheimercare.local",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "DevDoctor123!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["doctor"],
+      "attributes": {
+        "seed_note": ["DEV-ONLY account for local setup"]
+      }
+    },
+    {
+      "username": "dev-admin@alzheimercare.local",
+      "email": "dev-admin@alzheimercare.local",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "DevAdmin123!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["admin"],
+      "attributes": {
+        "seed_note": ["DEV-ONLY account for local setup"]
+      }
+    }
+  ]
+}

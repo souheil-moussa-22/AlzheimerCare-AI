@@ -4,29 +4,29 @@ import { useAuth } from '../contexts/AuthContext'
 import type { UserRole } from '../types'
 
 export const ProtectedRoute = ({
-  allowedRole,
+  allowedRoles,
   children,
 }: {
-  allowedRole: UserRole
+  allowedRoles: UserRole[]
   children: ReactNode
 }) => {
-  const { user } = useAuth()
+  const { isAuthenticated, user } = useAuth()
 
-  if (!user) {
+  if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />
   }
 
-  if (user.role !== allowedRole) {
-    return <Navigate to={`/${user.role}/dashboard`} replace />
+  if (!allowedRoles.includes(user.role)) {
+    return <Navigate to="/403" replace />
   }
 
   return <>{children}</>
 }
 
 export const RoleLandingRedirect = () => {
-  const { user } = useAuth()
+  const { user, isAuthenticated } = useAuth()
 
-  if (!user) {
+  if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />
   }
 

@@ -39,3 +39,21 @@ def test_doctor_cannot_read_unassigned_patient_data():
     response = client.get(f"/api/patients/{unassigned_patient_profile.id}/")
 
     assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_admin_cannot_edit_clinical_data():
+    admin_user = User.objects.create_user("admin@example.com", "Testpass123!", role=UserRole.ADMIN)
+    patient_user = User.objects.create_user("patient@example.com", "Testpass123!", role=UserRole.PATIENT)
+    patient_profile = PatientProfile.objects.create(user=patient_user, pseudonym="patient-to-edit")
+
+    client = APIClient()
+    client.force_authenticate(user=admin_user)
+
+    response = client.patch(
+        f"/api/patients/{patient_profile.id}/clinical/",
+        {"birth_date": "2000-01-01"},
+        format="json",
+    )
+
+    assert response.status_code == 403
