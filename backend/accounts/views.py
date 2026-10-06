@@ -38,8 +38,8 @@ class AdminUsersView(APIView):
         client = KeycloakAdminClient()
         try:
             users = client.list_users()
-        except KeycloakAdminError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+        except KeycloakAdminError:
+            return Response({"detail": "Upstream identity provider error"}, status=status.HTTP_502_BAD_GATEWAY)
 
         return Response(
             [
@@ -84,13 +84,13 @@ class AdminUsersView(APIView):
                     method=request.method,
                     metadata={"keycloak_id": keycloak_id, "role": payload["role"]},
                 )
-        except Exception as exc:  # noqa: BLE001
+        except Exception:  # noqa: BLE001
             if keycloak_id:
                 try:
                     client.delete_user(keycloak_id)
                 except KeycloakAdminError:
                     pass
-            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+            return Response({"detail": "Unable to create user"}, status=status.HTTP_502_BAD_GATEWAY)
 
         return Response(
             {
@@ -155,5 +155,5 @@ class AdminUserDetailView(APIView):
                 return Response({"detail": "Status updated"})
 
             return Response({"detail": "No supported update field supplied"}, status=status.HTTP_400_BAD_REQUEST)
-        except KeycloakAdminError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+        except KeycloakAdminError:
+            return Response({"detail": "Upstream identity provider error"}, status=status.HTTP_502_BAD_GATEWAY)
