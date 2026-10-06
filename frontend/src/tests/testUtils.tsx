@@ -18,7 +18,7 @@ export const renderWithProviders = (
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <AuthProvider initialUser={initialUser}>
+      <AuthProvider initialUser={initialUser} disableKeycloak>
         <MemoryRouter initialEntries={[initialEntry]}>{ui}</MemoryRouter>
       </AuthProvider>
     </QueryClientProvider>,

@@ -40,6 +40,10 @@ const navByRole: Record<
     { label: 'AI predictions', to: '/doctor/predictions', icon: <Activity size={16} /> },
     { label: 'Medical reports', to: '/doctor/reports', icon: <FileText size={16} /> },
   ],
+  admin: [
+    { label: 'Dashboard', to: '/admin/dashboard', icon: <LayoutDashboard size={16} /> },
+    { label: 'Users', to: '/admin/users', icon: <Users size={16} /> },
+  ],
 }
 
 export const AppShell = ({ children }: AppShellProps) => {

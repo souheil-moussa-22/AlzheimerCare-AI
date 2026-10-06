@@ -1,20 +1,25 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { LoginPage } from './pages/LoginPage'
+import { AdminUsersPage } from './pages/admin/UsersPage'
 import { DoctorDashboard } from './pages/doctor/Dashboard'
-import { PatientDashboard } from './pages/patient/Dashboard'
+import { ForbiddenPage } from './pages/ForbiddenPage'
+import { LoginPage } from './pages/LoginPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
+import { SessionExpiredPage } from './pages/SessionExpiredPage'
+import { PatientDashboard } from './pages/patient/Dashboard'
 import { ProtectedRoute, RoleLandingRedirect } from './routes/RouteGuards'
 
 function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/403" element={<ForbiddenPage />} />
+      <Route path="/session-expired" element={<SessionExpiredPage />} />
       <Route path="/" element={<RoleLandingRedirect />} />
 
       <Route
         path="/patient/dashboard"
         element={
-          <ProtectedRoute allowedRole="patient">
+          <ProtectedRoute allowedRoles={['patient']}>
             <PatientDashboard />
           </ProtectedRoute>
         }
@@ -22,7 +27,7 @@ function App() {
       <Route
         path="/patient/tests"
         element={
-          <ProtectedRoute allowedRole="patient">
+          <ProtectedRoute allowedRoles={['patient']}>
             <PlaceholderPage title="My tests" />
           </ProtectedRoute>
         }
@@ -30,7 +35,7 @@ function App() {
       <Route
         path="/patient/games"
         element={
-          <ProtectedRoute allowedRole="patient">
+          <ProtectedRoute allowedRoles={['patient']}>
             <PlaceholderPage title="Cognitive games" />
           </ProtectedRoute>
         }
@@ -38,7 +43,7 @@ function App() {
       <Route
         path="/patient/progress"
         element={
-          <ProtectedRoute allowedRole="patient">
+          <ProtectedRoute allowedRoles={['patient']}>
             <PlaceholderPage title="My progress" />
           </ProtectedRoute>
         }
@@ -46,7 +51,7 @@ function App() {
       <Route
         path="/patient/appointments"
         element={
-          <ProtectedRoute allowedRole="patient">
+          <ProtectedRoute allowedRoles={['patient']}>
             <PlaceholderPage title="Appointments" />
           </ProtectedRoute>
         }
@@ -55,7 +60,7 @@ function App() {
       <Route
         path="/doctor/dashboard"
         element={
-          <ProtectedRoute allowedRole="doctor">
+          <ProtectedRoute allowedRoles={['doctor']}>
             <DoctorDashboard />
           </ProtectedRoute>
         }
@@ -63,7 +68,7 @@ function App() {
       <Route
         path="/doctor/patients"
         element={
-          <ProtectedRoute allowedRole="doctor">
+          <ProtectedRoute allowedRoles={['doctor']}>
             <PlaceholderPage title="My patients" />
           </ProtectedRoute>
         }
@@ -71,7 +76,7 @@ function App() {
       <Route
         path="/doctor/consultations"
         element={
-          <ProtectedRoute allowedRole="doctor">
+          <ProtectedRoute allowedRoles={['doctor']}>
             <PlaceholderPage title="Consultations" />
           </ProtectedRoute>
         }
@@ -79,7 +84,7 @@ function App() {
       <Route
         path="/doctor/predictions"
         element={
-          <ProtectedRoute allowedRole="doctor">
+          <ProtectedRoute allowedRoles={['doctor']}>
             <PlaceholderPage title="AI predictions" />
           </ProtectedRoute>
         }
@@ -87,8 +92,25 @@ function App() {
       <Route
         path="/doctor/reports"
         element={
-          <ProtectedRoute allowedRole="doctor">
+          <ProtectedRoute allowedRoles={['doctor']}>
             <PlaceholderPage title="Medical reports" />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <PlaceholderPage title="Admin dashboard" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <AdminUsersPage />
           </ProtectedRoute>
         }
       />

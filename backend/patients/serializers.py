@@ -9,3 +9,9 @@ class PatientProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = PatientProfile
         fields = ["id", "user_email", "pseudonym", "birth_date"]
+
+
+class PatientClinicalUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PatientProfile
+        fields = ["birth_date"]
