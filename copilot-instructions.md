@@ -4,7 +4,7 @@ You are a senior full-stack + ML engineer. Build AlzheimerCare AI: a medical web
 
 ## Stack
 - Frontend: React + TypeScript + Tailwind CSS + Recharts (Vite), React Router, TanStack Query
-- Backend: Django + Django REST Framework + JWT (SimpleJWT), PostgreSQL
+- Backend: Django + Django REST Framework + Keycloak OIDC, Django validates tokens, PostgreSQL
 - Async: Celery + Redis (MRI analysis, transcription, notifications, PDF generation)
 - AI service: separate FastAPI (or Django-isolated) service using PyTorch, MONAI, NiBabel, NumPy; Grad-CAM/SHAP for explainability
 - Automation: n8n via webhooks/HTTP requests
@@ -40,7 +40,7 @@ Plus auth (login, logout, refresh, password reset), user admin, appointments, no
 { state: "stable" | "to_monitor" | "likely_progression" | "insufficient_data", risk_score: 0-1, confidence: 0-1, data_quality: str, influential_factors: [...], model_version: str, created_at }
 
 ## Security
-JWT with expiry, hashed passwords, optional MFA, file validation (type/size), rate limiting, CORS, encryption in transit and at rest, pseudonymization, environment-based secrets (no secrets in code).
+Keycloak OIDC, Django validates tokensy, hashed passwords, optional MFA, file validation (type/size), rate limiting, CORS, encryption in transit and at rest, pseudonymization, environment-based secrets (no secrets in code).
 
 ## Engineering standards
 - Type hints in Python, strict TypeScript, no `any`
