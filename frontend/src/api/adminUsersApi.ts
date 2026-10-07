@@ -5,11 +5,11 @@ import type {
   AssignableRole,
   DetailResponse,
 } from '../types'
-import { apiBaseUrl, requestJson, type AuthTokenAdapter } from './client'
+import { API_BASE_URL, requestJson, type AuthTokenAdapter } from './client'
 
 export type { AdminUserItem }
 
-const usersUrl = `${apiBaseUrl}/api/auth/admin/users/`
+const usersUrl = `${API_BASE_URL}/api/auth/admin/users/`
 
 export const adminUsersApi = {
   list(auth: AuthTokenAdapter) {

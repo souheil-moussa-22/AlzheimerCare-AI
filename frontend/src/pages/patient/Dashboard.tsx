@@ -1,23 +1,13 @@
 import { CalendarClock, Gamepad2, TrendingUp } from 'lucide-react'
-import {
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts'
 import { AppShell } from '../../components/layout/AppShell'
 import { chartColors } from '../../styles/tokens'
-import {
-  Badge,
-  Button,
-  Card,
-  EmptyState,
-  Skeleton,
-  WidgetError,
-} from '../../components/ui'
+import { Badge, Button, Card, EmptyState, Skeleton, WidgetError } from '../../components/ui'
 import { usePatientDashboard } from '../../hooks/usePatientDashboard'
+import { useAuth } from '../../contexts/AuthContext'
+import { formatDate } from '../../lib/format'
+
+const { user } = useAuth()
 
 export const PatientDashboard = () => {
   const { data, isLoading, isError, error, refetch } = usePatientDashboard()
@@ -25,7 +15,7 @@ export const PatientDashboard = () => {
   return (
     <AppShell>
       <section className="mb-5">
-        <h1 className="text-2xl font-semibold text-text">Bonjour Ahmed</h1>
+        <h1 className="text-2xl font-semibold text-text">Bonjour {user?.fullName.split(' ')[0]}</h1>
         <p className="mt-1 text-sm text-text-muted">
           Ravi de vous revoir ! Continuons ensemble sur ce beau chemin.
         </p>
@@ -112,10 +102,8 @@ export const PatientDashboard = () => {
             <article className="space-y-2">
               <p className="text-sm font-semibold text-text">{data.appointments[0].clinician}</p>
               <p className="text-sm text-text-muted">{data.appointments[0].date}</p>
-              <p className="text-sm text-text-muted">
-                {data.appointments[0].startTime} - {data.appointments[0].endTime}
-              </p>
-              <Badge tone="blue">Visioconférence</Badge>
+              <p className="text-sm text-text-muted">{formatDate(data.appointments[0].date)}</p>
+              <Badge tone="blue">{data.appointments[0].mode === 'video' ? 'Visioconférence' : 'En cabinet'}</Badge>
             </article>
           )}
           {!isLoading && data && data.appointments.length === 0 && (

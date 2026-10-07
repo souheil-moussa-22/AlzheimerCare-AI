@@ -3,10 +3,10 @@ export type RiskState = 'low' | 'moderate' | 'high'
 export interface Patient {
   id: string
   fullName: string
-  age: number
+  age: number | null
   identifier: string
   riskState: RiskState
-  lastConsultationDate: string
+  lastConsultationDate: string | null
   reason: string
 }
 
@@ -23,9 +23,9 @@ export interface Appointment {
 
 export interface CognitiveScore {
   month: string
-  memory: number
-  attention: number
-  regularity: number
+  memory: number | null
+  attention: number | null
+  regularity: number | null
 }
 
 export interface Alert {

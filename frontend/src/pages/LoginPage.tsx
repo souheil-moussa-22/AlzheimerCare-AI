@@ -4,7 +4,6 @@ import { Navigate } from 'react-router-dom'
 import { Button, Card } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
 
-const registrationUrl = import.meta.env.VITE_KEYCLOAK_REGISTRATION_URL ?? 'http://localhost:8080/realms/alzheimercare/login-actions/registration'
 const forgotPasswordUrl = import.meta.env.VITE_KEYCLOAK_FORGOT_PASSWORD_URL ?? 'http://localhost:8080/realms/alzheimercare/login-actions/reset-credentials'
 
 export const LoginPage = () => {

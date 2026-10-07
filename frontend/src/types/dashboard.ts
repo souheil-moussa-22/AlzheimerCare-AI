@@ -39,5 +39,6 @@ export interface DoctorDashboardData {
   alerts: Alert[]
   consultations: Consultation[]
   reports: Report[]
-  quickPrediction: Prediction
+  quickPrediction: Prediction | null
+  scoreEvolution: CognitiveScore[]
 }

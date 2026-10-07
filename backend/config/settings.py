@@ -20,6 +20,13 @@ INSTALLED_APPS = [
     "patients",
     "doctors",
     "audit_logs",
+    "dashboards",
+    "reports",
+    "games",
+    "cognitive_tests",
+    "appointments",
+    "notifications",
+    "predictions",
 ]
 
 MIDDLEWARE = [

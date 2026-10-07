@@ -1,28 +1,15 @@
-export const apiBaseUrl: string = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
 
 export class ApiError extends Error {
   status?: number
-  fieldErrors: Record<string, string[]> = {}
+  details?: unknown
 
-  constructor(message: string, status?: number, fieldErrors: Record<string, string[]> = {}) {
+  constructor(message: string, status?: number, details?: unknown) {
     super(message)
     this.name = 'ApiError'
     this.status = status
-    this.fieldErrors = fieldErrors
+    this.details = details
   }
-}
-
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-
-export const apiClient = {
-  async get<T>(resolver: () => T, wait = import.meta.env.MODE === 'test' ? 0 : 350): Promise<T> {
-    await delay(wait)
-    try {
-      return resolver()
-    } catch {
-      throw new ApiError('Unable to fetch data. Please try again.')
-    }
-  },
 }
 
 export interface AuthTokenAdapter {
@@ -64,44 +51,31 @@ export const authFetch = async (
   return response
 }
 
-const defaultMessages: Record<number, string> = {
-  400: 'Please check the submitted values.',
-  403: 'You do not have permission to perform this action.',
-  404: 'The requested resource was not found.',
-  502: 'The identity provider is unavailable. Please try again.',
-}
-
-const parseError = async (response: Response): Promise<ApiError> => {
-  const fallback = defaultMessages[response.status] ?? 'Request failed'
-  const text = await response.text()
-  let data: unknown = null
-  try {
-    data = text ? JSON.parse(text) : null
-  } catch {
-    data = null
-  }
-  if (data && typeof data === 'object' && !Array.isArray(data)) {
-    const record = data as Record<string, unknown>
-    if (typeof record.detail === 'string') {
-      return new ApiError(record.detail, response.status)
-    }
-    const fieldErrors: Record<string, string[]> = {}
-    for (const [field, value] of Object.entries(record)) {
-      if (Array.isArray(value)) fieldErrors[field] = value.map(String)
-      else if (typeof value === 'string') fieldErrors[field] = [value]
-    }
-    return new ApiError(Object.values(fieldErrors)[0]?.[0] ?? fallback, response.status, fieldErrors)
-  }
-  return new ApiError(fallback, response.status)
+const messageFor = (status: number, body: unknown): string => {
+  const detail =
+    typeof body === 'object' && body !== null && 'detail' in body && typeof body.detail === 'string'
+      ? body.detail
+      : undefined
+  if (status === 400) return detail ?? 'Some fields are invalid.'
+  if (status === 401) return 'Session expired'
+  if (status === 403) return detail ?? 'You do not have permission to view this.'
+  if (status === 404) return detail ?? 'Requested data was not found.'
+  if (status >= 500) return 'The server had a problem. Please try again.'
+  return detail ?? 'Request failed'
 }
 
 export const requestJson = async <T>(input: string, init: RequestInit, auth: AuthTokenAdapter): Promise<T> => {
-  const response = await authFetch(input, init, auth)
+  let response: Response
+  try {
+    response = await authFetch(input, init, auth)
+  } catch (error) {
+    if (error instanceof ApiError) throw error
+    throw new ApiError('Network error. Check your connection and try again.')
+  }
   if (!response.ok) {
-    throw await parseError(response)
+    const body: unknown = await response.json().catch(() => undefined) // 400 field errors land in `details`
+    throw new ApiError(messageFor(response.status, body), response.status, body)
   }
-  if (response.status === 204) {
-    return undefined as T
-  }
+  if (response.status === 204) return undefined as T
   return (await response.json()) as T
 }
