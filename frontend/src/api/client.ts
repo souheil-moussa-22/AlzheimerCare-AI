@@ -1,10 +1,14 @@
+export const apiBaseUrl: string = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
+
 export class ApiError extends Error {
   status?: number
+  fieldErrors: Record<string, string[]> = {}
 
-  constructor(message: string, status?: number) {
+  constructor(message: string, status?: number, fieldErrors: Record<string, string[]> = {}) {
     super(message)
     this.name = 'ApiError'
     this.status = status
+    this.fieldErrors = fieldErrors
   }
 }
 
@@ -60,11 +64,41 @@ export const authFetch = async (
   return response
 }
 
+const defaultMessages: Record<number, string> = {
+  400: 'Please check the submitted values.',
+  403: 'You do not have permission to perform this action.',
+  404: 'The requested resource was not found.',
+  502: 'The identity provider is unavailable. Please try again.',
+}
+
+const parseError = async (response: Response): Promise<ApiError> => {
+  const fallback = defaultMessages[response.status] ?? 'Request failed'
+  const text = await response.text()
+  let data: unknown = null
+  try {
+    data = text ? JSON.parse(text) : null
+  } catch {
+    data = null
+  }
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    const record = data as Record<string, unknown>
+    if (typeof record.detail === 'string') {
+      return new ApiError(record.detail, response.status)
+    }
+    const fieldErrors: Record<string, string[]> = {}
+    for (const [field, value] of Object.entries(record)) {
+      if (Array.isArray(value)) fieldErrors[field] = value.map(String)
+      else if (typeof value === 'string') fieldErrors[field] = [value]
+    }
+    return new ApiError(Object.values(fieldErrors)[0]?.[0] ?? fallback, response.status, fieldErrors)
+  }
+  return new ApiError(fallback, response.status)
+}
+
 export const requestJson = async <T>(input: string, init: RequestInit, auth: AuthTokenAdapter): Promise<T> => {
   const response = await authFetch(input, init, auth)
   if (!response.ok) {
-    const detail = await response.text()
-    throw new ApiError(detail || 'Request failed', response.status)
+    throw await parseError(response)
   }
   if (response.status === 204) {
     return undefined as T

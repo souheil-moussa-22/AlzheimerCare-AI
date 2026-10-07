@@ -11,6 +11,7 @@ interface AuthContextValue {
   hasRole: (role: UserRole) => boolean
   getAccessToken: () => string | null
   refreshAccessToken: () => Promise<string | null>
+  register: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -64,6 +65,11 @@ export const AuthProvider = ({
   const [user, setUser] = useState<AuthUser | null>(initialUser)
   const [initialized, setInitialized] = useState(Boolean(initialUser) || disableKeycloak)
   const [sessionExpired, setSessionExpired] = useState(false)
+
+  const register = useCallback(async () => {
+  if (disableKeycloak) return
+  await keycloak.register({ redirectUri: window.location.origin + '/' })
+}, [disableKeycloak])
 
   const login = useCallback(async () => {
     if (disableKeycloak) {
@@ -140,6 +146,7 @@ export const AuthProvider = ({
       hasRole: (role) => user?.role === role,
       getAccessToken: () => (disableKeycloak ? null : keycloak.token ?? null),
       refreshAccessToken,
+      register,
     }),
     [disableKeycloak, login, logout, refreshAccessToken, sessionExpired, user],
   )

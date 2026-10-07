@@ -50,7 +50,7 @@ services:
     ports:
       - "8080:8080"
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health/ready || exit 1"]
+      test: ["CMD-SHELL", "timeout 5 sh -c '</dev/tcp/127.0.0.1/9000'"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -63,7 +63,7 @@ services:
   backend:
     container_name: Alzheimers-Backend
     build: ./backend
-    env_file: .env.example
+    env_file: .env
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:${BACKEND_PORT:-8000}"
     volumes:
       - ./backend:/app
@@ -91,7 +91,7 @@ services:
   ai-service:
     container_name: Alzheimers-AI-Service
     build: ./ai-service
-    env_file: .env.example
+    env_file: .env
     command: sh -c "pip install -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port ${AI_SERVICE_PORT:-8001}"
     volumes:
       - ./ai-service:/app

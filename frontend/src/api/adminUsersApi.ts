@@ -1,36 +1,33 @@
-import type { UserRole } from '../types'
-import { requestJson, type AuthTokenAdapter } from './client'
+import type {
+  AdminCreatedUser,
+  AdminCreateUserPayload,
+  AdminUserItem,
+  AssignableRole,
+  DetailResponse,
+} from '../types'
+import { apiBaseUrl, requestJson, type AuthTokenAdapter } from './client'
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
+export type { AdminUserItem }
 
-export interface AdminUserItem {
-  keycloak_id: string
-  email: string
-  enabled: boolean
-  roles: string[]
-}
+const usersUrl = `${apiBaseUrl}/api/auth/admin/users/`
 
 export const adminUsersApi = {
   list(auth: AuthTokenAdapter) {
-    return requestJson<AdminUserItem[]>(`${baseUrl}/api/auth/admin/users/`, { method: 'GET' }, auth)
+    return requestJson<AdminUserItem[]>(usersUrl, { method: 'GET' }, auth)
   },
-  create(payload: { email: string; role: Extract<UserRole, 'patient' | 'doctor'>; temporary_password?: string }, auth: AuthTokenAdapter) {
-    return requestJson<AdminUserItem>(
-      `${baseUrl}/api/auth/admin/users/`,
-      { method: 'POST', body: JSON.stringify(payload) },
-      auth,
-    )
+  create(payload: AdminCreateUserPayload, auth: AuthTokenAdapter) {
+    return requestJson<AdminCreatedUser>(usersUrl, { method: 'POST', body: JSON.stringify(payload) }, auth)
   },
   toggleEnabled(keycloakId: string, enabled: boolean, auth: AuthTokenAdapter) {
-    return requestJson<{ detail: string }>(
-      `${baseUrl}/api/auth/admin/users/${keycloakId}/`,
+    return requestJson<DetailResponse>(
+      `${usersUrl}${keycloakId}/`,
       { method: 'PATCH', body: JSON.stringify({ enabled }) },
       auth,
     )
   },
-  changeRole(keycloakId: string, role: Extract<UserRole, 'patient' | 'doctor'>, auth: AuthTokenAdapter) {
-    return requestJson<{ detail: string }>(
-      `${baseUrl}/api/auth/admin/users/${keycloakId}/`,
+  changeRole(keycloakId: string, role: AssignableRole, auth: AuthTokenAdapter) {
+    return requestJson<DetailResponse>(
+      `${usersUrl}${keycloakId}/`,
       { method: 'PATCH', body: JSON.stringify({ role }) },
       auth,
     )

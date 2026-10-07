@@ -8,7 +8,7 @@ const registrationUrl = import.meta.env.VITE_KEYCLOAK_REGISTRATION_URL ?? 'http:
 const forgotPasswordUrl = import.meta.env.VITE_KEYCLOAK_FORGOT_PASSWORD_URL ?? 'http://localhost:8080/realms/alzheimercare/login-actions/reset-credentials'
 
 export const LoginPage = () => {
-  const { isAuthenticated, user, login } = useAuth()
+  const { isAuthenticated, user, login, register } = useAuth()
 
   useEffect(() => {
     void login()
@@ -28,9 +28,9 @@ export const LoginPage = () => {
         </Button>
 
         <div className="mt-4 flex items-center justify-between text-xs">
-          <a href={registrationUrl} className="text-brand-blue underline">
+          <button type="button" onClick={() => void register()} className="text-brand-blue underline">
             Create account
-          </a>
+          </button>
           <a href={forgotPasswordUrl} className="text-brand-blue underline">
             Forgot password
           </a>
