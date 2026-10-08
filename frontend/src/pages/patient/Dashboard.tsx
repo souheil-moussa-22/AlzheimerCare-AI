@@ -7,9 +7,8 @@ import { usePatientDashboard } from '../../hooks/usePatientDashboard'
 import { useAuth } from '../../contexts/AuthContext'
 import { formatDate } from '../../lib/format'
 
-const { user } = useAuth()
-
 export const PatientDashboard = () => {
+  const { user } = useAuth()
   const { data, isLoading, isError, error, refetch } = usePatientDashboard()
 
   return (

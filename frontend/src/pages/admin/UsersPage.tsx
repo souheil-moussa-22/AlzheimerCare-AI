@@ -5,8 +5,12 @@ import { Button, Card, EmptyState, Skeleton, WidgetError } from '../../component
 import { useAdminUserMutations, useAdminUsers } from '../../hooks/useAdminUsers'
 import type { AssignableRole } from '../../types'
 
-const fieldMessages = (error: unknown, field: string): string[] =>
-  error instanceof ApiError ? (error.fieldErrors[field] ?? []) : []
+const fieldMessages = (error: unknown, field: string): string[] => {
+  if (!(error instanceof ApiError)) return []
+
+  const fieldErrors = (error as unknown as { fieldErrors?: Record<string, string[]> }).fieldErrors
+  return fieldErrors?.[field] ?? []
+}
 
 export const AdminUsersPage = () => {
   const { data: users = [], isLoading, isError, error, refetch } = useAdminUsers()

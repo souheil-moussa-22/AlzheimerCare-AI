@@ -2,19 +2,32 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect, useM
 import { keycloak } from '../auth/keycloak'
 import type { AuthUser, UserRole } from '../types'
 
+export type AuthError = 'init-failed' | 'no-role' | null
+
 interface AuthContextValue {
   user: AuthUser | null
   isAuthenticated: boolean
   sessionExpired: boolean
+  authError: AuthError
   login: () => Promise<void>
   logout: () => Promise<void>
   hasRole: (role: UserRole) => boolean
   getAccessToken: () => string | null
   refreshAccessToken: () => Promise<string | null>
-  register: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
+
+let initPromise: Promise<boolean> | null = null
+const initKeycloak = () => {
+  initPromise ??= keycloak.init({
+    onLoad: 'check-sso',
+    pkceMethod: 'S256',
+    checkLoginIframe: false,
+    silentCheckSsoRedirectUri: `${window.location.origin}/silent-check-sso.html`,
+  })
+  return initPromise
+}
 
 const resolveRole = (tokenRoles: unknown): UserRole | null => {
   if (!Array.isArray(tokenRoles)) {
@@ -65,17 +78,14 @@ export const AuthProvider = ({
   const [user, setUser] = useState<AuthUser | null>(initialUser)
   const [initialized, setInitialized] = useState(Boolean(initialUser) || disableKeycloak)
   const [sessionExpired, setSessionExpired] = useState(false)
-
-  const register = useCallback(async () => {
-  if (disableKeycloak) return
-  await keycloak.register({ redirectUri: window.location.origin + '/' })
-}, [disableKeycloak])
+  const [authError, setAuthError] = useState<AuthError>(null)
 
   const login = useCallback(async () => {
     if (disableKeycloak) {
       return
     }
-    await keycloak.login()
+  
+    await keycloak.login({ redirectUri: `${window.location.origin}/` })
   }, [disableKeycloak])
 
   const logout = useCallback(async () => {
@@ -83,7 +93,7 @@ export const AuthProvider = ({
     if (disableKeycloak) {
       return
     }
-    await keycloak.logout({ redirectUri: window.location.origin + '/login' })
+    await keycloak.logout({ redirectUri: `${window.location.origin}/login` })
   }, [disableKeycloak])
 
   const refreshAccessToken = useCallback(async () => {
@@ -96,7 +106,7 @@ export const AuthProvider = ({
     } catch {
       setSessionExpired(true)
       setUser(null)
-      await keycloak.logout({ redirectUri: window.location.origin + '/session-expired' })
+      await keycloak.logout({ redirectUri: `${window.location.origin}/session-expired` })
       return null
     }
   }, [disableKeycloak])
@@ -107,22 +117,24 @@ export const AuthProvider = ({
     }
 
     let mounted = true
-    void keycloak
-      .init({
-        onLoad: 'check-sso',
-        pkceMethod: 'S256',
-        checkLoginIframe: false,
-        silentCheckSsoRedirectUri: `${window.location.origin}/silent-check-sso.html`,
-      })
+    keycloak.onTokenExpired = () => {
+      void refreshAccessToken()
+    }
+
+    void initKeycloak()
       .then((authenticated) => {
-        if (!mounted) {
+        if (!mounted || !authenticated) {
           return
         }
-        if (authenticated) {
-          setUser(mapUserFromToken())
+        const mapped = mapUserFromToken()
+        setUser(mapped)
+        if (!mapped) {
+          setAuthError('no-role')
         }
-        keycloak.onTokenExpired = () => {
-          void refreshAccessToken()
+      })
+      .catch(() => {
+        if (mounted) {
+          setAuthError('init-failed')
         }
       })
       .finally(() => {
@@ -141,14 +153,14 @@ export const AuthProvider = ({
       user,
       isAuthenticated: Boolean(user),
       sessionExpired,
+      authError,
       login,
       logout,
       hasRole: (role) => user?.role === role,
       getAccessToken: () => (disableKeycloak ? null : keycloak.token ?? null),
       refreshAccessToken,
-      register,
     }),
-    [disableKeycloak, login, logout, refreshAccessToken, sessionExpired, user],
+    [authError, disableKeycloak, login, logout, refreshAccessToken, sessionExpired, user],
   )
 
   if (!initialized) {

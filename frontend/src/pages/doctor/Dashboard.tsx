@@ -13,9 +13,9 @@ const riskTone = {
 } as const
 
 const statIcons = [UsersRound, CalendarCheck, Activity, FileClock]
-const { user } = useAuth()
 
 export const DoctorDashboard = () => {  
+  const { user } = useAuth()
   const { data, isLoading, isError, error, refetch } = useDoctorDashboard() as any
 
   return (
